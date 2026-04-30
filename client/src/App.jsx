@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import useStore from './store/useStore';
 import BottomNav from './components/BottomNav';
 import AddExpenseSheet from './components/AddExpenseSheet';
+import InstallPrompt from './components/InstallPrompt';
 import Home from './pages/Home';
 import Expenses from './pages/Expenses';
 import Savings from './pages/Savings';
@@ -34,6 +35,7 @@ function AppLayout() {
         <span className="text-white text-3xl font-black leading-none">+</span>
       </button>
       <BottomNav />
+      <InstallPrompt />
       <AddExpenseSheet
         open={fabOpen}
         onClose={() => setFabOpen(false)}

@@ -15,9 +15,10 @@ if (isProd) {
     client: 'pg',
     connection: {
       connectionString: process.env.DATABASE_URL,
-      ssl: { rejectUnauthorized: false },
+      ssl: { rejectUnauthorized: false, require: true },
     },
     pool: { min: 0, max: 10 },
+    acquireConnectionTimeout: 10000,
   });
   console.log('🐘 Using PostgreSQL (production)');
 } else {

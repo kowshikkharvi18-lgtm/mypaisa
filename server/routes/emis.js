@@ -18,8 +18,18 @@ router.get('/', auth, async (req, res) => {
 router.post('/', auth, async (req, res) => {
   try {
     const { name, total_amount, monthly_emi, total_months, due_date = 5, bank, color = '#6366f1' } = req.body;
-    if (!name || !monthly_emi || !total_months) return res.status(400).json({ error: 'name, monthly_emi, total_months required' });
-    const [id] = await db('emis').insert({ user_id: req.userId, name, total_amount: parseFloat(total_amount || monthly_emi * total_months), monthly_emi: parseFloat(monthly_emi), total_months: parseInt(total_months), due_date: parseInt(due_date), bank: bank || null, color });
+    if (!name || !monthly_emi || !total_months)
+      return res.status(400).json({ error: 'name, monthly_emi, total_months required' });
+    const id = await db.getInsertId('emis', {
+      user_id: req.userId,
+      name,
+      total_amount: parseFloat(total_amount || monthly_emi * total_months),
+      monthly_emi: parseFloat(monthly_emi),
+      total_months: parseInt(total_months),
+      due_date: parseInt(due_date),
+      bank: bank || null,
+      color,
+    });
     res.status(201).json(await db('emis').where({ id }).first());
   } catch (e) { res.status(500).json({ error: 'Server error' }); }
 });

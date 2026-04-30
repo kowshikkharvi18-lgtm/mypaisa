@@ -15,7 +15,9 @@ router.post('/', auth, async (req, res) => {
   try {
     const { name_en, name_kn, type, icon = 'circle', color = '#FF9933', monthly_budget = 0 } = req.body;
     if (!name_en || !type) return res.status(400).json({ error: 'name_en and type required' });
-    const [id] = await db('categories').insert({ user_id: req.userId, name_en, name_kn: name_kn || name_en, type, icon, color, monthly_budget });
+    const id = await db.getInsertId('categories', {
+      user_id: req.userId, name_en, name_kn: name_kn || name_en, type, icon, color, monthly_budget,
+    });
     res.status(201).json(await db('categories').where({ id }).first());
   } catch (e) { res.status(500).json({ error: 'Server error' }); }
 });

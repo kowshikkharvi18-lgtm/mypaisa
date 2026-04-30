@@ -42,6 +42,19 @@ if (isProd) {
   console.log('🗄️  Using SQLite (development)');
 }
 
+// ── Helper: get inserted id cross-DB ─────────────────────────────────────────
+// SQLite knex returns [rowid], PostgreSQL returns [{id}] when using .returning('id')
+// Use this helper after every insert to get the new row id safely.
+db.getInsertId = async function(table, data) {
+  if (isProd) {
+    const [row] = await db(table).insert(data).returning('id');
+    return row.id ?? row; // knex pg returns {id: N}
+  } else {
+    const [id] = await db(table).insert(data);
+    return id;
+  }
+};
+
 // ── Create tables if they don't exist ─────────────────────────────────────────
 async function initDB() {
   // users
@@ -174,11 +187,19 @@ async function initDB() {
     });
   }
 
-  // Indexes (only for SQLite — PostgreSQL handles these differently)
-  if (!isProd) {
-    await db.raw('CREATE INDEX IF NOT EXISTS idx_exp_user_month ON expenses(user_id, month)');
-    await db.raw('CREATE INDEX IF NOT EXISTS idx_inc_user_month ON income(user_id, month)');
-    await db.raw('CREATE INDEX IF NOT EXISTS idx_cat_user       ON categories(user_id, type)');
+  // Indexes — works for both SQLite and PostgreSQL
+  try {
+    if (isProd) {
+      await db.raw('CREATE INDEX IF NOT EXISTS idx_exp_user_month ON expenses(user_id, month)');
+      await db.raw('CREATE INDEX IF NOT EXISTS idx_inc_user_month ON income(user_id, month)');
+      await db.raw('CREATE INDEX IF NOT EXISTS idx_cat_user       ON categories(user_id, type)');
+    } else {
+      await db.raw('CREATE INDEX IF NOT EXISTS idx_exp_user_month ON expenses(user_id, month)');
+      await db.raw('CREATE INDEX IF NOT EXISTS idx_inc_user_month ON income(user_id, month)');
+      await db.raw('CREATE INDEX IF NOT EXISTS idx_cat_user       ON categories(user_id, type)');
+    }
+  } catch (e) {
+    // Indexes may already exist — safe to ignore
   }
 
   console.log('✅ Database ready');

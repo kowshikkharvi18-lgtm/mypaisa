@@ -51,7 +51,7 @@ router.post('/register', async (req, res) => {
       return res.status(409).json({ error: 'Email already registered' });
 
     const hashed = await bcrypt.hash(password, 10);
-    const [userId] = await db('users').insert({
+    const userId = await db.getInsertId('users', {
       name, email, password: hashed,
       monthly_salary: parseFloat(monthly_salary) || 0,
       salary_date: parseInt(salary_date) || 1,

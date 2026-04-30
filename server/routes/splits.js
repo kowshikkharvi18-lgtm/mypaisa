@@ -12,9 +12,18 @@ router.get('/', auth, async (req, res) => {
 
 router.post('/', auth, async (req, res) => {
   try {
-    const { title, total_amount, your_share, split_with = [], date, note } = req.body;
-    if (!title || !total_amount || !your_share) return res.status(400).json({ error: 'title, total_amount, your_share required' });
-    const [id] = await db('bill_splits').insert({ user_id: req.userId, title, total_amount: parseFloat(total_amount), your_share: parseFloat(your_share), split_with: JSON.stringify(split_with), date: date || new Date().toISOString().split('T')[0], note: note || null });
+    const { title, total_amount, your_share, split_with = [], date, notes } = req.body;
+    if (!title || !total_amount || !your_share)
+      return res.status(400).json({ error: 'title, total_amount, your_share required' });
+    const id = await db.getInsertId('bill_splits', {
+      user_id: req.userId,
+      title,
+      total_amount: parseFloat(total_amount),
+      your_share: parseFloat(your_share),
+      split_with: JSON.stringify(split_with),
+      date: date || new Date().toISOString().split('T')[0],
+      notes: notes || null,
+    });
     const row = await db('bill_splits').where({ id }).first();
     res.status(201).json({ ...row, split_with: JSON.parse(row.split_with || '[]') });
   } catch (e) { res.status(500).json({ error: 'Server error' }); }

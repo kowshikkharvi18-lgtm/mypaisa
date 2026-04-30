@@ -13,9 +13,16 @@ router.get('/', auth, async (req, res) => {
 
 router.post('/', auth, async (req, res) => {
   try {
-    const { amount, source = 'Salary', date, note } = req.body;
+    const { amount, source = 'Salary', date, notes } = req.body;
     if (!amount || !date) return res.status(400).json({ error: 'amount and date required' });
-    const [id] = await db('income').insert({ user_id: req.userId, amount: parseFloat(amount), source, date, month: date.slice(0,7), note: note || null });
+    const id = await db.getInsertId('income', {
+      user_id: req.userId,
+      amount: parseFloat(amount),
+      source,
+      date,
+      month: date.slice(0, 7),
+      notes: notes || null,
+    });
     res.status(201).json(await db('income').where({ id }).first());
   } catch (e) { res.status(500).json({ error: 'Server error' }); }
 });

@@ -100,7 +100,7 @@ router.post('/', auth, async (req, res) => {
     if (!cat) return res.status(400).json({ error: 'Invalid category' });
 
     const month = date.slice(0, 7);
-    const [id] = await db('expenses').insert({
+    const id = await db.getInsertId('expenses', {
       user_id: req.userId,
       category_id,
       amount: parseFloat(amount),

@@ -1,4 +1,6 @@
-require('dotenv').config();
+// Load .env from server directory
+require('dotenv').config({ path: require('path').join(__dirname, '.env') });
+
 const express     = require('express');
 const cors        = require('cors');
 const compression = require('compression');
@@ -9,12 +11,14 @@ const app = express();
 app.use(compression());
 app.use(express.json());
 
-// CORS — allow all in dev, restrict in prod
+// CORS — allow all origins in production (same-server setup), restrict in dev
 if (process.env.NODE_ENV !== 'production') {
   app.use(cors({
     origin: ['http://localhost:5173', 'http://localhost:5174'],
     credentials: true,
   }));
+} else {
+  app.use(cors());
 }
 
 // API Routes
@@ -31,9 +35,9 @@ app.get('/api/health', (_, res) => res.json({ status: 'ok', app: 'MyPaisa', env:
 
 // Serve React build in production
 if (process.env.NODE_ENV === 'production') {
-  const clientBuild = path.join(__dirname, '../client/dist');
+  // __dirname is /app/server, so client/dist is one level up
+  const clientBuild = path.join(__dirname, '..', 'client', 'dist');
   app.use(express.static(clientBuild));
-  // All non-API routes → React app
   app.get('*', (req, res) => {
     if (!req.path.startsWith('/api')) {
       res.sendFile(path.join(clientBuild, 'index.html'));
@@ -48,8 +52,8 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`\n🚀 MyPaisa → http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`\n🚀 MyPaisa → http://0.0.0.0:${PORT}`);
   console.log(`   Mode: ${process.env.NODE_ENV || 'development'}`);
   console.log(`   DB:   ${process.env.DATABASE_URL ? 'PostgreSQL' : 'SQLite'}\n`);
 });

@@ -1,2 +1,2 @@
-// Railway entry point — delegates to server/index.js
+// Railway entry point — run from repo root, delegates to server/
 require('./server/index.js');

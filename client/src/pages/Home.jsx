@@ -106,8 +106,8 @@ export default function Home() {
         </div>
       </div>
 
-      {/* ── Add Income Banner (shown when no income recorded) ── */}
-      {income === 0 && (
+      {/* ── Add Income Banner — only for current and future months ── */}
+      {income === 0 && selectedMonth >= new Date().toISOString().slice(0, 7) && (
         <button onClick={() => setIncomeModal(true)}
           className="w-full flex items-center justify-between p-4 rounded-2xl border-2 border-dashed border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-900/10 hover:bg-emerald-100 dark:hover:bg-emerald-900/20 transition-colors">
           <div className="flex items-center gap-3">

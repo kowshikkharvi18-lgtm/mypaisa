@@ -42,7 +42,32 @@ export default function Profile() {
       const res = await api.patch('/auth/profile', payload);
       updateUser(res.data);
       setLang(form.language);
-      toast.success('Profile saved! ✅');
+
+      // Auto-add income for current month if salary changed and no income recorded yet
+      if (newSalary > 0) {
+        const currentMonth = new Date().toISOString().slice(0, 7);
+        const date = `${currentMonth}-01`;
+        try {
+          // Check if income already exists for this month
+          const incRes = await api.get(`/income?month=${currentMonth}`);
+          if (incRes.data.length === 0) {
+            // No income recorded yet — auto-add salary as income
+            await api.post('/income', {
+              amount: newSalary,
+              source: 'Salary',
+              notes:  'Auto-added from profile',
+              date,
+            });
+            toast.success('Profile saved & salary added for this month! 💰');
+          } else {
+            toast.success('Profile saved! ✅');
+          }
+        } catch {
+          toast.success('Profile saved! ✅');
+        }
+      } else {
+        toast.success('Profile saved! ✅');
+      }
     } catch (err) {
       toast.error(err.response?.data?.error || 'Save failed');
     } finally {

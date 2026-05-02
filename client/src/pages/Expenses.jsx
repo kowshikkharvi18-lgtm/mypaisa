@@ -1,10 +1,10 @@
-﻿import React, { useEffect, useState, useCallback } from 'react';
+﻿import { useEffect, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Filter, Trash2, Pencil, TrendingDown, RefreshCw } from 'lucide-react';
+import { Search, Filter, Trash2, Pencil } from 'lucide-react';
 import api from '../lib/api';
 import useStore from '../store/useStore';
 import AddExpenseSheet from '../components/AddExpenseSheet';
-import { fmtINR, fmtFull, fmtDate, monthOptions, PAYMENT_METHODS } from '../lib/utils';
+import { fmtINR, fmtDate, monthOptions, PAYMENT_METHODS } from '../lib/utils';
 import { useT } from '../i18n/translations';
 import toast from 'react-hot-toast';
 
@@ -20,6 +20,7 @@ export default function Expenses() {
   const [payFilter, setPayFilter] = useState('');
   const [editData, setEditData] = useState(null);
   const [deleteId, setDeleteId] = useState(null);
+  const [deleting, setDeleting] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const opts = monthOptions(12);
 
@@ -29,16 +30,18 @@ export default function Expenses() {
       const params = new URLSearchParams({ month: selectedMonth });
       if (catFilter) params.set('category_id', catFilter);
       if (search)    params.set('search', search);
-      const [expRes, sumRes, [catRes1, catRes2]] = await Promise.all([
+      const [expRes, sumRes, catRes1, catRes2] = await Promise.all([
         api.get(`/expenses?${params}`),
         api.get(`/expenses/summary?month=${selectedMonth}`),
-        Promise.all([api.get('/categories?type=need'), api.get('/categories?type=want')]),
+        api.get('/categories?type=need'),
+        api.get('/categories?type=want'),
       ]);
       setExpenses(expRes.data);
       setSummary(sumRes.data);
       setCategories([...catRes1.data, ...catRes2.data]);
     } catch (err) {
       console.error('Expenses load error:', err);
+      toast.error('Failed to load expenses');
     } finally {
       setLoading(false);
     }
@@ -46,15 +49,28 @@ export default function Expenses() {
 
   useEffect(() => { load(); }, [load]);
 
+  // Reset filters when month changes
+  useEffect(() => {
+    setCatFilter('');
+    setPayFilter('');
+    setSearch('');
+  }, [selectedMonth]);
+
   const filtered = payFilter ? expenses.filter(e => e.payment_method === payFilter) : expenses;
 
   const handleDelete = async () => {
+    if (deleting) return;
+    setDeleting(true);
     try {
       await api.delete(`/expenses/${deleteId}`);
       toast.success('Deleted!');
       setDeleteId(null);
       load();
-    } catch { toast.error('Failed'); }
+    } catch {
+      toast.error('Failed to delete');
+    } finally {
+      setDeleting(false);
+    }
   };
 
   // Group by date
@@ -212,7 +228,10 @@ export default function Expenses() {
               <p className="text-sm text-slate-400 mb-5">This cannot be undone.</p>
               <div className="flex gap-3">
                 <button onClick={() => setDeleteId(null)} className="btn-secondary flex-1">Cancel</button>
-                <button onClick={handleDelete} className="flex-1 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white font-bold text-sm transition-colors">Delete</button>
+                <button onClick={handleDelete} disabled={deleting}
+                  className="flex-1 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white font-bold text-sm transition-colors disabled:opacity-60">
+                  {deleting ? 'Deleting...' : 'Delete'}
+                </button>
               </div>
             </motion.div>
           </div>

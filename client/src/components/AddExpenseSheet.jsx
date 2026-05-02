@@ -23,7 +23,7 @@ export default function AddExpenseSheet({ open, onClose, onSaved, editData = nul
       .catch(() => toast.error('Could not load categories'));
     if (editData) {
       setAmount(String(editData.amount));
-      setForm({ category_id: String(editData.category_id), date: editData.date, payment_method: editData.payment_method || 'upi', note: editData.note || '', is_split: !!editData.is_split });
+      setForm({ category_id: String(editData.category_id), date: editData.date, payment_method: editData.payment_method || 'upi', note: editData.notes || '', is_split: !!editData.is_split });
       setStep('category');
     } else {
       setAmount(''); setForm({ category_id:'', date: new Date().toISOString().split('T')[0], payment_method:'upi', note:'', is_split:false }); setStep('amount');

@@ -112,6 +112,7 @@ router.get('/', auth, async (req, res) => {
       income_count:   parseInt(incTot.count),
       expense_count:  parseInt(expTot.count),
       by_category:    byCategory,
+      budget_limits:  [], // placeholder — budget limits feature
       daily,
       trend,
       last_month: {

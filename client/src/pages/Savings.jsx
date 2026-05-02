@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Trash2, Pencil, X } from 'lucide-react';
 import api from '../lib/api';
@@ -8,68 +8,91 @@ import { fmtINR, SAVINGS_TYPES, FESTIVALS, COLORS } from '../lib/utils';
 import { useT } from '../i18n/translations';
 import toast from 'react-hot-toast';
 
-const GOAL_COLORS = ['#10b981','#f59e0b','#3b82f6','#8b5cf6','#ef4444','#06b6d4','#ec4899'];
-
 export default function Savings() {
   const { lang } = useStore();
   const t = useT(lang);
   const [goals, setGoals] = useState([]);
   const [festivals, setFestivals] = useState([]);
-  const [tab, setTab] = useState('goals'); // goals | festivals
-  const [modal, setModal] = useState(null); // null | 'goal' | 'festival'
+  const [tab, setTab] = useState('goals');
+  const [modal, setModal] = useState(null);
   const [editItem, setEditItem] = useState(null);
   const [form, setForm] = useState({});
   const [saving, setSaving] = useState(false);
 
   const load = async () => {
-    const [g, f] = await Promise.all([api.get('/savings/goals'), api.get('/savings/festivals')]);
-    setGoals(g.data); setFestivals(f.data);
+    try {
+      const [g, f] = await Promise.all([api.get('/savings/goals'), api.get('/savings/festivals')]);
+      setGoals(g.data);
+      setFestivals(f.data);
+    } catch {
+      toast.error('Failed to load savings');
+    }
   };
   useEffect(() => { load(); }, []);
 
   const openGoal = (item = null) => {
     setEditItem(item);
-    setForm(item ? { name: item.name, type: item.type, target_amount: String(item.target_amount), saved_amount: String(item.saved_amount), deadline: item.deadline || '', color: item.color } : { name: '', type: 'emergency', target_amount: '', saved_amount: '0', deadline: '', color: '#10b981' });
+    setForm(item
+      ? { name: item.name, type: item.type, target_amount: String(item.target_amount), saved_amount: String(item.saved_amount), deadline: item.deadline || '', color: item.color }
+      : { name: '', type: 'emergency', target_amount: '', saved_amount: '0', deadline: '', color: '#10b981' });
     setModal('goal');
   };
 
   const openFestival = (item = null) => {
     setEditItem(item);
-    setForm(item ? { festival_name: item.festival_name, festival_name_kn: item.festival_name_kn, target_amount: String(item.target_amount), saved_amount: String(item.saved_amount), festival_date: item.festival_date, color: item.color } : { festival_name: '', festival_name_kn: '', target_amount: '', saved_amount: '0', festival_date: '', color: '#FF9933' });
+    setForm(item
+      ? { festival_name: item.festival_name, festival_name_kn: item.festival_name_kn, target_amount: String(item.target_amount), saved_amount: String(item.saved_amount), festival_date: item.festival_date, color: item.color }
+      : { festival_name: '', festival_name_kn: '', target_amount: '', saved_amount: '0', festival_date: '', color: '#FF9933' });
     setModal('festival');
   };
 
   const saveGoal = async (e) => {
     e.preventDefault();
+    if (parseFloat(form.target_amount) <= 0) return toast.error('Target must be greater than 0');
     setSaving(true);
     try {
       if (editItem) await api.patch(`/savings/goals/${editItem.id}`, form);
       else await api.post('/savings/goals', form);
       toast.success(editItem ? 'Updated!' : 'Goal created! 🎯');
-      setModal(null); load();
-    } catch { toast.error('Failed'); } finally { setSaving(false); }
+      setModal(null);
+      load();
+    } catch { toast.error('Failed to save goal'); }
+    finally { setSaving(false); }
   };
 
   const saveFestival = async (e) => {
     e.preventDefault();
+    if (!form.festival_name) return toast.error('Select a festival');
+    if (parseFloat(form.target_amount) <= 0) return toast.error('Target must be greater than 0');
     setSaving(true);
     try {
       if (editItem) await api.patch(`/savings/festivals/${editItem.id}`, form);
       else await api.post('/savings/festivals', form);
       toast.success(editItem ? 'Updated!' : 'Festival added! 🎉');
-      setModal(null); load();
-    } catch { toast.error('Failed'); } finally { setSaving(false); }
+      setModal(null);
+      load();
+    } catch { toast.error('Failed to save festival'); }
+    finally { setSaving(false); }
   };
 
   const deleteGoal = async (id) => {
-    await api.delete(`/savings/goals/${id}`); toast.success('Deleted'); load();
-  };
-  const deleteFestival = async (id) => {
-    await api.delete(`/savings/festivals/${id}`); toast.success('Deleted'); load();
+    try {
+      await api.delete(`/savings/goals/${id}`);
+      toast.success('Deleted');
+      load();
+    } catch { toast.error('Failed to delete'); }
   };
 
-  const totalTarget = goals.reduce((s, g) => s + parseFloat(g.target_amount), 0);
-  const totalSaved  = goals.reduce((s, g) => s + parseFloat(g.saved_amount), 0);
+  const deleteFestival = async (id) => {
+    try {
+      await api.delete(`/savings/festivals/${id}`);
+      toast.success('Deleted');
+      load();
+    } catch { toast.error('Failed to delete'); }
+  };
+
+  const totalTarget = goals.reduce((s, g) => s + parseFloat(g.target_amount || 0), 0);
+  const totalSaved  = goals.reduce((s, g) => s + parseFloat(g.saved_amount  || 0), 0);
 
   return (
     <div className="p-4 space-y-4">
@@ -95,7 +118,6 @@ export default function Savings() {
 
       {tab === 'goals' && (
         <>
-          {/* Summary */}
           {goals.length > 0 && (
             <div className="card p-4 flex items-center gap-4">
               <div className="relative flex-shrink-0">
@@ -238,12 +260,12 @@ export default function Savings() {
                     <div>
                       <label className="label">Target (₹)</label>
                       <div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold">₹</span>
-                        <input type="number" required value={form.target_amount || ''} onChange={e => setForm(f => ({ ...f, target_amount: e.target.value }))} className="input pl-7" placeholder="100000" /></div>
+                        <input type="number" min="1" required value={form.target_amount || ''} onChange={e => setForm(f => ({ ...f, target_amount: e.target.value }))} className="input pl-7" placeholder="100000" /></div>
                     </div>
                     <div>
                       <label className="label">Saved So Far (₹)</label>
                       <div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold">₹</span>
-                        <input type="number" value={form.saved_amount || '0'} onChange={e => setForm(f => ({ ...f, saved_amount: e.target.value }))} className="input pl-7" placeholder="0" /></div>
+                        <input type="number" min="0" value={form.saved_amount || '0'} onChange={e => setForm(f => ({ ...f, saved_amount: e.target.value }))} className="input pl-7" placeholder="0" /></div>
                     </div>
                   </div>
                   <div>
@@ -287,12 +309,12 @@ export default function Savings() {
                     <div>
                       <label className="label">Target (₹)</label>
                       <div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold">₹</span>
-                        <input type="number" required value={form.target_amount || ''} onChange={e => setForm(f => ({ ...f, target_amount: e.target.value }))} className="input pl-7" placeholder="5000" /></div>
+                        <input type="number" min="1" required value={form.target_amount || ''} onChange={e => setForm(f => ({ ...f, target_amount: e.target.value }))} className="input pl-7" placeholder="5000" /></div>
                     </div>
                     <div>
                       <label className="label">Saved (₹)</label>
                       <div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold">₹</span>
-                        <input type="number" value={form.saved_amount || '0'} onChange={e => setForm(f => ({ ...f, saved_amount: e.target.value }))} className="input pl-7" placeholder="0" /></div>
+                        <input type="number" min="0" value={form.saved_amount || '0'} onChange={e => setForm(f => ({ ...f, saved_amount: e.target.value }))} className="input pl-7" placeholder="0" /></div>
                     </div>
                   </div>
                   <div>

@@ -99,7 +99,9 @@ router.get('/', auth, async (req, res) => {
     const totalIncome  = parseFloat(incTot.total);
     const totalExpense = parseFloat(expTot.total);
     const salary       = parseFloat(user.monthly_salary || 0);
-    const effectiveIncome = totalIncome > 0 ? totalIncome : salary;
+    // Only use salary as fallback for current month — past months with no income show actual 0
+    const currentMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+    const effectiveIncome = totalIncome > 0 ? totalIncome : (month === currentMonth ? salary : 0);
     const balance      = effectiveIncome - totalExpense;
     const savingsRate  = effectiveIncome > 0 ? Math.round((balance / effectiveIncome) * 100) : 0;
 

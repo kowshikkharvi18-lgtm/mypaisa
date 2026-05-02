@@ -39,7 +39,9 @@ export default function Home() {
   const salary  = parseFloat(user?.monthly_salary || 0);
   const income  = parseFloat(data?.total_income  || 0);
   const expense = parseFloat(data?.total_expense || 0);
-  const effectiveIncome = income > 0 ? income : salary;
+  // Only use salary as fallback for the current month — past months with no income should show 0
+  const currentMonth = new Date().toISOString().slice(0, 7);
+  const effectiveIncome = income > 0 ? income : (selectedMonth === currentMonth ? salary : 0);
   const balance  = effectiveIncome - expense;
   const spentPct = effectiveIncome > 0 ? Math.min(Math.round((expense / effectiveIncome) * 100), 100) : 0;
   const savedPct = effectiveIncome > 0 ? Math.max(Math.round((balance / effectiveIncome) * 100), 0) : 0;

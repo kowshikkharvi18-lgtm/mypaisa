@@ -28,7 +28,7 @@ export default function InstallPrompt() {
     <div className="fixed bottom-24 left-4 right-4 z-50 bg-gradient-to-r from-orange-500 to-orange-600 rounded-2xl p-4 shadow-2xl flex items-center gap-3">
       <div className="text-2xl">💰</div>
       <div className="flex-1">
-        <p className="text-white font-bold text-sm">Install MyPaisa</p>
+        <p className="text-white font-bold text-sm">Install VelvetLedger</p>
         <p className="text-orange-100 text-xs">Add to home screen for quick access</p>
       </div>
       <button

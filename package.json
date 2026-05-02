@@ -1,7 +1,7 @@
 {
-  "name": "mypaisa",
+  "name": "velvetledger",
   "version": "1.0.0",
-  "description": "MyPaisa - Budget Planner for Young Indian Professionals",
+  "description": "VelvetLedger - Budget Planner",
   "main": "index.js",
   "scripts": {
     "build": "npm install --prefix server && cd client && npm install && npm run build",

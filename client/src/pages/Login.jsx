@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+﻿import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Eye, EyeOff, Mail, Lock, ArrowRight, ChevronLeft } from 'lucide-react';
@@ -12,7 +12,7 @@ export default function Login() {
   const [form, setForm] = useState({ email: '', password: '' });
   const [show, setShow] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [step, setStep] = useState('login'); // login | forgot | reset
+  const [step, setStep] = useState('login');
   const [forgotEmail, setForgotEmail] = useState('');
   const [resetToken, setResetToken] = useState('');
   const [newPwd, setNewPwd] = useState('');
@@ -23,7 +23,7 @@ export default function Login() {
     try {
       const { data } = await api.post('/auth/login', form);
       setAuth(data.user, data.token);
-      toast.success(`Welcome back, ${data.user.name}! 🙏`);
+      toast.success(`Welcome back, ${data.user.name}!`);
       navigate('/');
     } catch (err) {
       toast.error(err.response?.data?.error || 'Login failed');
@@ -62,24 +62,22 @@ export default function Login() {
   return (
     <div className="min-h-screen flex flex-col lg:flex-row">
 
-      {/* Left panel — branding (visible on lg+, top strip on mobile) */}
+      {/* Left panel */}
       <div className="lg:w-1/2 flex flex-col items-center justify-center p-8 lg:p-16"
         style={{ background: 'linear-gradient(160deg, #0A0A14 0%, #1a0a2e 50%, #0d1a0d 100%)' }}>
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
           className="text-center max-w-sm">
           <div className="text-6xl mb-4">💰</div>
-          <h1 className="text-4xl font-black text-white mb-2">MyPaisa</h1>
-          <p className="text-orange-300 font-medium mb-2">ನಿಮ್ಮ ಹಣದ ಸ್ನೇಹಿತ</p>
-          <p className="text-white/50 text-sm">Your Money Friend</p>
+          <h1 className="text-4xl font-black text-white mb-2">VelvetLedger</h1>
+          <p className="text-white/50 text-sm">Your Smart Budget Planner</p>
 
-          {/* Features */}
           <div className="mt-8 space-y-3 text-left hidden lg:block">
             {[
-              { icon: '📊', text: 'Track income & expenses in ₹ INR' },
-              { icon: '🎯', text: 'Set savings goals — SIP, Gold, Emergency' },
-              { icon: '🎉', text: 'Plan for Diwali, Holi, Onam & more' },
-              { icon: '🤝', text: 'Split bills with roommates & friends' },
-              { icon: '📅', text: 'Track EMIs — phone, bike, laptop' },
+              { icon: '📊', text: 'Track income & expenses' },
+              { icon: '🎯', text: 'Set savings goals' },
+              { icon: '🎉', text: 'Plan for upcoming events' },
+              { icon: '🤝', text: 'Split bills with friends' },
+              { icon: '📅', text: 'Track EMIs' },
             ].map((f, i) => (
               <div key={i} className="flex items-center gap-3">
                 <span className="text-xl">{f.icon}</span>
@@ -87,28 +85,20 @@ export default function Login() {
               </div>
             ))}
           </div>
-
-          {/* Indian flag strip */}
-          <div className="flex mt-8 rounded-full overflow-hidden opacity-50 mx-auto w-24">
-            <div className="flex-1 h-1.5 bg-orange-500" />
-            <div className="flex-1 h-1.5 bg-white" />
-            <div className="flex-1 h-1.5 bg-green-600" />
-          </div>
         </motion.div>
       </div>
 
-      {/* Right panel — form */}
+      {/* Right panel */}
       <div className="lg:w-1/2 flex items-center justify-center p-6 lg:p-16 bg-orange-50 dark:bg-[#0A0A14]">
         <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}
           className="w-full max-w-md">
 
           <AnimatePresence mode="wait">
 
-            {/* ── LOGIN ── */}
             {step === 'login' && (
               <motion.div key="login" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
                 <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white mb-1">Welcome back 👋</h2>
-                <p className="text-slate-500 dark:text-slate-400 mb-8">Sign in to your MyPaisa account</p>
+                <p className="text-slate-500 dark:text-slate-400 mb-8">Sign in to your VelvetLedger account</p>
 
                 <form onSubmit={handleLogin} className="space-y-4">
                   <div>
@@ -150,7 +140,7 @@ export default function Login() {
 
                 <div className="mt-6 text-center">
                   <p className="text-slate-500 dark:text-slate-400 text-sm">
-                    New to MyPaisa?{' '}
+                    New to VelvetLedger?{' '}
                     <Link to="/register" className="text-orange-500 font-bold hover:text-orange-600">
                       Create free account
                     </Link>
@@ -159,7 +149,6 @@ export default function Login() {
               </motion.div>
             )}
 
-            {/* ── FORGOT PASSWORD ── */}
             {step === 'forgot' && (
               <motion.div key="forgot" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
                 <button onClick={() => setStep('login')}
@@ -168,7 +157,6 @@ export default function Login() {
                 </button>
                 <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white mb-1">Forgot Password?</h2>
                 <p className="text-slate-500 dark:text-slate-400 mb-8">Enter your email to get a reset token</p>
-
                 <form onSubmit={handleForgot} className="space-y-4">
                   <div>
                     <label className="label">Email Address</label>
@@ -188,12 +176,10 @@ export default function Login() {
               </motion.div>
             )}
 
-            {/* ── RESET PASSWORD ── */}
             {step === 'reset' && (
               <motion.div key="reset" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
                 <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white mb-1">Set New Password</h2>
                 <p className="text-slate-500 dark:text-slate-400 mb-8">Choose a strong new password</p>
-
                 <form onSubmit={handleReset} className="space-y-4">
                   <div>
                     <label className="label">New Password</label>

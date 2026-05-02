@@ -188,9 +188,9 @@ export default function Profile() {
           <p className="section-title">Preferences</p>
 
           <div>
-            <label className="label">Language / ಭಾಷೆ</label>
+            <label className="label">Language</label>
             <div className="grid grid-cols-2 gap-3">
-              {[{ v: 'en', l: '🇬🇧 English' }, { v: 'kn', l: '🇮🇳 ಕನ್ನಡ' }].map(lg => (
+              {[{ v: 'en', l: '🇬🇧 English' }].map(lg => (
                 <button key={lg.v} type="button"
                   onClick={() => setForm(f => ({ ...f, language: lg.v }))}
                   className={`py-3 rounded-xl font-bold text-sm transition-colors ${
@@ -253,7 +253,7 @@ export default function Profile() {
         </button>
       </div>
 
-      <p className="text-center text-xs text-slate-400 pb-6">MyPaisa v1.0 · Made with ❤️ for India 🇮🇳</p>
+      <p className="text-center text-xs text-slate-400 pb-6">VelvetLedger v1.0 · Made by Kowshik</p>
     </div>
   );
 }

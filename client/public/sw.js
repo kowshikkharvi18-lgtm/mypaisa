@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mypaisa-v1';
+const CACHE_NAME = 'velvetledger-v1';
 const STATIC_ASSETS = ['/', '/index.html'];
 
 self.addEventListener('install', e => {
@@ -18,9 +18,7 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
-  // Don't cache API calls
   if (e.request.url.includes('/api/')) return;
-
   e.respondWith(
     fetch(e.request)
       .then(res => {

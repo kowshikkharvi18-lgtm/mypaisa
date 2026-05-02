@@ -85,7 +85,7 @@ export default function Onboarding() {
 
             {step === 3 && (
               <div className="space-y-3">
-                {[{ v: 'en', label: 'English', sub: 'English interface' }, { v: 'kn', label: 'ಕನ್ನಡ', sub: 'Kannada interface' }].map(lang => (
+                {[{ v: 'en', label: 'English', sub: 'English interface' }].map(lang => (
                   <button key={lang.v} onClick={() => setData(d => ({ ...d, language: lang.v }))}
                     className={`w-full py-4 rounded-2xl font-bold transition-all flex items-center justify-between px-5 ${data.language === lang.v ? 'text-white' : 'bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-300'}`}
                     style={data.language === lang.v ? { background: 'linear-gradient(135deg,#FF9933,#FF6600)' } : {}}>

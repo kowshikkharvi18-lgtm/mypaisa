@@ -36,7 +36,7 @@ app.use('/api/splits',     require('./routes/splits'));
 app.use('/api/savings',    require('./routes/savings'));
 app.use('/api/dashboard',  require('./routes/dashboard'));
 
-app.get('/api/health', (_, res) => res.json({ status: 'ok', app: 'MyPaisa', env: process.env.NODE_ENV }));
+app.get('/api/health', (_, res) => res.json({ status: 'ok', app: 'VelvetLedger', env: process.env.NODE_ENV }));
 
 // Serve React build in production
 if (process.env.NODE_ENV === 'production') {
@@ -58,7 +58,7 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`\n🚀 MyPaisa → http://0.0.0.0:${PORT}`);
+  console.log(`\n🚀 VelvetLedger → http://0.0.0.0:${PORT}`);
   console.log(`   Mode: ${process.env.NODE_ENV || 'development'}`);
   console.log(`   DB:   ${process.env.DATABASE_URL ? 'PostgreSQL' : 'SQLite'}\n`);
 });

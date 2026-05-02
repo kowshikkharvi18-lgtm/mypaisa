@@ -1,7 +1,7 @@
 {
-  "name": "MyPaisa - Budget Planner",
-  "short_name": "MyPaisa",
-  "description": "Smart budget planner for young Indian professionals",
+  "name": "VelvetLedger - Budget Planner",
+  "short_name": "VelvetLedger",
+  "description": "Smart budget planner — track expenses, savings and income",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0f172a",

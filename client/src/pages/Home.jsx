@@ -39,11 +39,11 @@ export default function Home() {
   const salary  = parseFloat(user?.monthly_salary || 0);
   const income  = parseFloat(data?.total_income  || 0);
   const expense = parseFloat(data?.total_expense || 0);
-  // Only use salary as fallback for the current month — past months with no income should show 0
-  const currentMonth = new Date().toISOString().slice(0, 7);
-  const effectiveIncome = income > 0 ? income : (selectedMonth === currentMonth ? salary : 0);
+  // Each month is independent — only use actual recorded income for that month
+  // Salary from profile is only shown as a reference, never counted as income automatically
+  const effectiveIncome = income;
   const balance  = effectiveIncome - expense;
-  const spentPct = effectiveIncome > 0 ? Math.min(Math.round((expense / effectiveIncome) * 100), 100) : 0;
+  const spentPct = effectiveIncome > 0 ? Math.min(Math.round((expense / effectiveIncome) * 100), 100) : (expense > 0 ? 100 : 0);
   const savedPct = effectiveIncome > 0 ? Math.max(Math.round((balance / effectiveIncome) * 100), 0) : 0;
   const ringColor = spentPct >= 100 ? '#ef4444' : spentPct >= 80 ? '#f59e0b' : '#FF9933';
   const alerts  = (data?.budget_limits || []).filter(l => l.alert);

@@ -19,6 +19,8 @@ if (isProd) {
     },
     pool: { min: 0, max: 10 },
   });
+  // Suppress pg SSL deprecation warning
+  process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
   console.log('🐘 Using PostgreSQL (production)');
 } else {
   // SQLite — local development

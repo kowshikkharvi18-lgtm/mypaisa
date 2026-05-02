@@ -43,21 +43,21 @@ export default function Profile() {
       updateUser(res.data);
       setLang(form.language);
 
-      // Auto-add income for current month if salary changed and no income recorded yet
+      // Auto-update income for current month when salary changes
       if (newSalary > 0) {
         const currentMonth = new Date().toISOString().slice(0, 7);
         const date = `${currentMonth}-01`;
         try {
-          // Check if income already exists for this month
           const incRes = await api.get(`/income?month=${currentMonth}`);
-          if (incRes.data.length === 0) {
-            // No income recorded yet — auto-add salary as income
-            await api.post('/income', {
-              amount: newSalary,
-              source: 'Salary',
-              notes:  'Auto-added from profile',
-              date,
-            });
+          const existing = incRes.data.find(i => i.source === 'Salary');
+          if (existing) {
+            // Update existing salary income for this month
+            await api.delete(`/income/${existing.id}`);
+            await api.post('/income', { amount: newSalary, source: 'Salary', notes: 'Updated from profile', date });
+            toast.success('Profile saved & salary updated for this month! 💰');
+          } else if (incRes.data.length === 0) {
+            // No income at all — add it
+            await api.post('/income', { amount: newSalary, source: 'Salary', notes: 'Auto-added from profile', date });
             toast.success('Profile saved & salary added for this month! 💰');
           } else {
             toast.success('Profile saved! ✅');

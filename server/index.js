@@ -1,6 +1,11 @@
 // Load .env from server directory
 require('dotenv').config({ path: require('path').join(__dirname, '.env') });
 
+// Suppress deprecation warnings in production
+if (process.env.NODE_ENV === 'production') {
+  process.removeAllListeners('warning');
+}
+
 const express     = require('express');
 const cors        = require('cors');
 const compression = require('compression');

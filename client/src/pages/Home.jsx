@@ -363,6 +363,76 @@ export default function Home() {
         </div>
       )}
 
+      {/* ── Monthly History & Savings Suggestions ── */}
+      {(data?.trend || []).some(t => t.income > 0 || t.expense > 0) && (
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}
+          className="card p-4">
+          <p className="section-title mb-3">📅 Monthly Summary</p>
+          <div className="space-y-2">
+            {[...data.trend].reverse().map((m, i) => {
+              const saved = m.income - m.expense;
+              const savePct = m.income > 0 ? Math.round((saved / m.income) * 100) : 0;
+              const isGood = savePct >= 20;
+              return (
+                <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 dark:bg-white/[0.04]">
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 font-extrabold text-xs"
+                    style={{ background: isGood ? '#d1fae5' : '#fee2e2', color: isGood ? '#065f46' : '#991b1b' }}>
+                    {isGood ? '✅' : '⚠️'}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex justify-between items-center">
+                      <p className="text-sm font-bold text-slate-900 dark:text-white">{m.month}</p>
+                      <p className={`text-xs font-extrabold ${saved >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+                        {saved >= 0 ? '+' : ''}{fmtINR(saved)}
+                      </p>
+                    </div>
+                    <div className="flex gap-3 mt-0.5 text-[10px] text-slate-400">
+                      <span>In: {fmtINR(m.income)}</span>
+                      <span>Out: {fmtINR(m.expense)}</span>
+                      {m.income > 0 && <span className={isGood ? 'text-emerald-500 font-bold' : 'text-red-400 font-bold'}>{savePct}% saved</span>}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Savings Suggestions */}
+          <div className="mt-4 pt-4 border-t border-slate-100 dark:border-white/[0.06]">
+            <p className="section-title mb-3">💡 Savings Tips for Next Month</p>
+            <div className="space-y-2">
+              {(() => {
+                const tips = [];
+                const avgExpense = data.trend.filter(m => m.expense > 0).reduce((s, m) => s + m.expense, 0) /
+                  (data.trend.filter(m => m.expense > 0).length || 1);
+                const topCat = (data?.by_category || []).filter(c => c.type !== 'income')[0];
+                const currentIncome = parseFloat(data?.total_income || 0);
+                const currentExpense = parseFloat(data?.total_expense || 0);
+                const savePct = currentIncome > 0 ? Math.round(((currentIncome - currentExpense) / currentIncome) * 100) : 0;
+
+                if (savePct < 20 && currentIncome > 0)
+                  tips.push({ icon: '🎯', text: `You saved ${savePct}% this month. Try to reach 20% next month — save ${fmtINR(currentIncome * 0.2)}.` });
+                if (topCat && parseFloat(topCat.total) > currentIncome * 0.3)
+                  tips.push({ icon: '✂️', text: `${topCat.name_en} is your biggest spend at ${fmtINR(topCat.total)}. Try cutting it by 10% next month.` });
+                if (avgExpense > 0 && currentExpense > avgExpense * 1.1)
+                  tips.push({ icon: '📉', text: `You spent ${fmtINR(currentExpense - avgExpense)} more than your average. Aim for ${fmtINR(avgExpense)} next month.` });
+                if ((data?.emi_total || 0) > currentIncome * 0.4 && currentIncome > 0)
+                  tips.push({ icon: '⚡', text: `EMIs are ${Math.round((data.emi_total / currentIncome) * 100)}% of your income. Consider prepaying one loan.` });
+                if (tips.length === 0)
+                  tips.push({ icon: '🌟', text: 'Great job! You\'re saving well. Keep it up next month too!' });
+
+                return tips.map((tip, i) => (
+                  <div key={i} className="flex items-start gap-3 p-3 rounded-xl bg-orange-50 dark:bg-orange-900/10 border border-orange-100 dark:border-orange-900/20">
+                    <span className="text-lg flex-shrink-0">{tip.icon}</span>
+                    <p className="text-xs text-slate-700 dark:text-slate-300 font-medium leading-relaxed">{tip.text}</p>
+                  </div>
+                ));
+              })()}
+            </div>
+          </div>
+        </motion.div>
+      )}
+
       {/* ── Empty State ── */}
       {!loading && !data?.recent?.length && expCats.length === 0 && (
         <div className="card p-10 text-center">

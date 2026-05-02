@@ -1,20 +1,25 @@
-﻿import React, { useEffect, useState, useCallback } from 'react';
-import { motion } from 'framer-motion';
-import { RefreshCw, AlertTriangle, TrendingUp, TrendingDown, Plus } from 'lucide-react';
+﻿import { useEffect, useState, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { RefreshCw, AlertTriangle, Plus, X } from 'lucide-react';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import api from '../lib/api';
 import useStore from '../store/useStore';
 import Ring from '../components/Ring';
 import { fmtINR, fmtFull, fmtDateShort, monthOptions, COLORS } from '../lib/utils';
 import { useT } from '../i18n/translations';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
+import toast from 'react-hot-toast';
+
+const INCOME_SOURCES = ['Salary', 'Freelance', 'Business', 'Investment', 'Other'];
 
 export default function Home() {
   const { user, lang, selectedMonth, setSelectedMonth } = useStore();
   const t = useT(lang);
-  const navigate = useNavigate();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [incomeModal, setIncomeModal] = useState(false);
+  const [incomeForm, setIncomeForm] = useState({ amount: '', source: 'Salary', notes: '' });
+  const [savingIncome, setSavingIncome] = useState(false);
   const opts = monthOptions(6);
 
   const load = useCallback(async () => {
@@ -24,6 +29,7 @@ export default function Home() {
       setData(r.data);
     } catch (err) {
       console.error('Dashboard error:', err);
+      toast.error('Failed to load dashboard');
     } finally {
       setLoading(false);
     }
@@ -31,21 +37,41 @@ export default function Home() {
 
   useEffect(() => { load(); }, [load]);
 
+  const addIncome = async (e) => {
+    e.preventDefault();
+    if (!incomeForm.amount || parseFloat(incomeForm.amount) <= 0)
+      return toast.error('Enter a valid amount');
+    setSavingIncome(true);
+    try {
+      // Use first day of selected month as date
+      const date = `${selectedMonth}-01`;
+      await api.post('/income', {
+        amount: parseFloat(incomeForm.amount),
+        source: incomeForm.source,
+        notes:  incomeForm.notes || null,
+        date,
+      });
+      toast.success('Income added! 💰');
+      setIncomeModal(false);
+      setIncomeForm({ amount: '', source: 'Salary', notes: '' });
+      load();
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Failed to add income');
+    } finally {
+      setSavingIncome(false);
+    }
+  };
+
   const hour = new Date().getHours();
-  const greeting = hour < 12 ? (lang === 'kn' ? t('good_morning') : 'Good Morning')
-    : hour < 17 ? (lang === 'kn' ? t('good_afternoon') : 'Good Afternoon')
-    : (lang === 'kn' ? t('good_evening') : 'Good Evening');
+  const greeting = hour < 12 ? 'Good Morning' : hour < 17 ? 'Good Afternoon' : 'Good Evening';
 
   const salary  = parseFloat(user?.monthly_salary || 0);
   const income  = parseFloat(data?.total_income  || 0);
   const expense = parseFloat(data?.total_expense || 0);
-  // Each month is independent — only use actual recorded income for that month
-  // Salary from profile is only shown as a reference, never counted as income automatically
   const effectiveIncome = income;
   const balance  = effectiveIncome - expense;
   const spentPct = effectiveIncome > 0 ? Math.min(Math.round((expense / effectiveIncome) * 100), 100) : (expense > 0 ? 100 : 0);
   const savedPct = effectiveIncome > 0 ? Math.max(Math.round((balance / effectiveIncome) * 100), 0) : 0;
-  const ringColor = spentPct >= 100 ? '#ef4444' : spentPct >= 80 ? '#f59e0b' : '#FF9933';
   const alerts  = (data?.budget_limits || []).filter(l => l.alert);
   const expCats = (data?.by_category  || []).filter(c => c.type !== 'income');
 
@@ -72,31 +98,43 @@ export default function Home() {
           </h1>
         </div>
         <div className="flex items-center gap-2">
-          <select
-            value={selectedMonth}
-            onChange={e => setSelectedMonth(e.target.value)}
-            className="input w-auto text-xs py-2 font-bold"
-          >
+          <select value={selectedMonth} onChange={e => setSelectedMonth(e.target.value)}
+            className="input w-auto text-xs py-2 font-bold">
             {opts.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
           </select>
           <button onClick={load} className="btn-icon"><RefreshCw size={16} /></button>
         </div>
       </div>
 
+      {/* ── Add Income Banner (shown when no income recorded) ── */}
+      {income === 0 && (
+        <button onClick={() => setIncomeModal(true)}
+          className="w-full flex items-center justify-between p-4 rounded-2xl border-2 border-dashed border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-900/10 hover:bg-emerald-100 dark:hover:bg-emerald-900/20 transition-colors">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-emerald-500 flex items-center justify-center">
+              <Plus size={18} className="text-white" />
+            </div>
+            <div className="text-left">
+              <p className="font-bold text-emerald-700 dark:text-emerald-400 text-sm">Add Income for {opts.find(o => o.value === selectedMonth)?.label}</p>
+              <p className="text-xs text-emerald-600 dark:text-emerald-500">Tap to record your salary or income</p>
+            </div>
+          </div>
+          <span className="text-emerald-500 font-bold text-lg">+</span>
+        </button>
+      )}
+
       {/* ── Payday Hero Card ── */}
       <div className="payday-card p-5 text-white relative z-10">
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <p className="text-orange-100 text-xs font-bold uppercase tracking-widest mb-1">
-              {data?.days_to_salary === 0
-                ? '🎉 Payday Today!'
-                : `${data?.days_to_salary ?? '—'} days to salary`}
+              {data?.days_to_salary === 0 ? '🎉 Payday Today!' : `${data?.days_to_salary ?? '—'} days to salary`}
             </p>
             <p className="text-4xl font-black amount-big leading-none">
               {fmtINR(balance)}
             </p>
             <p className="text-orange-100 text-xs mt-1.5">
-              {balance >= 0 ? 'Balance remaining' : 'Over budget!'}
+              {income === 0 ? 'Add income to track balance' : balance >= 0 ? 'Balance remaining' : 'Over budget!'}
             </p>
           </div>
           <div className="relative flex-shrink-0">
@@ -110,9 +148,11 @@ export default function Home() {
 
         {/* Stats row */}
         <div className="flex gap-3 mt-4 pt-4 border-t border-white/20">
-          <div className="flex-1">
+          <div className="flex-1 cursor-pointer" onClick={() => setIncomeModal(true)}>
             <p className="text-orange-100 text-[10px] font-bold uppercase">Income</p>
-            <p className="text-white font-extrabold text-sm">{fmtINR(effectiveIncome)}</p>
+            <p className="text-white font-extrabold text-sm">
+              {income > 0 ? fmtINR(income) : <span className="text-orange-200 text-xs">+ Add</span>}
+            </p>
           </div>
           <div className="flex-1">
             <p className="text-orange-100 text-[10px] font-bold uppercase">Spent</p>
@@ -148,8 +188,8 @@ export default function Home() {
       </div>
 
       {/* ── Budget Alerts ── */}
-      {alerts.map(lim => (
-        <motion.div key={lim.id} initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
+      {alerts.map((lim, i) => (
+        <motion.div key={i} initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
           className={lim.pct >= 100 ? 'alert-danger' : 'alert-warn'}>
           <AlertTriangle size={18} className="flex-shrink-0 mt-0.5" />
           <p className="text-sm font-bold">
@@ -336,6 +376,66 @@ export default function Home() {
           )}
         </div>
       )}
+
+      {/* ── Add Income Modal ── */}
+      <AnimatePresence>
+        {incomeModal && (
+          <div className="fixed inset-0 z-50 flex items-end justify-center">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIncomeModal(false)} />
+            <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+              className="bottom-sheet z-50 w-full max-w-lg">
+              <div className="bottom-sheet-handle" />
+              <div className="px-5 pb-8">
+                <div className="flex items-center justify-between mb-5">
+                  <div>
+                    <h3 className="text-lg font-extrabold text-slate-900 dark:text-white">Add Income 💰</h3>
+                    <p className="text-xs text-slate-400">{opts.find(o => o.value === selectedMonth)?.label}</p>
+                  </div>
+                  <button onClick={() => setIncomeModal(false)} className="btn-icon"><X size={17} /></button>
+                </div>
+                <form onSubmit={addIncome} className="space-y-4">
+                  <div>
+                    <label className="label">Amount (₹)</label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-lg">₹</span>
+                      <input type="number" min="1" required autoFocus
+                        value={incomeForm.amount}
+                        onChange={e => setIncomeForm(f => ({ ...f, amount: e.target.value }))}
+                        className="input pl-8 text-xl font-bold" placeholder="20000" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="label">Source</label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {INCOME_SOURCES.map(src => (
+                        <button key={src} type="button"
+                          onClick={() => setIncomeForm(f => ({ ...f, source: src }))}
+                          className={`py-2.5 rounded-xl text-xs font-bold border-2 transition-all ${incomeForm.source === src ? 'border-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400' : 'border-slate-200 dark:border-white/10 text-slate-500'}`}>
+                          {src}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="label">Note (optional)</label>
+                    <input type="text"
+                      value={incomeForm.notes}
+                      onChange={e => setIncomeForm(f => ({ ...f, notes: e.target.value }))}
+                      className="input" placeholder="e.g. April salary, bonus..." />
+                  </div>
+                  <button type="submit" disabled={savingIncome}
+                    className="w-full py-4 rounded-2xl font-extrabold text-white text-base disabled:opacity-60"
+                    style={{ background: 'linear-gradient(135deg,#10b981,#059669)', boxShadow: '0 4px 16px rgba(16,185,129,0.35)' }}>
+                    {savingIncome ? 'Adding...' : 'Add Income 💰'}
+                  </button>
+                </form>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
